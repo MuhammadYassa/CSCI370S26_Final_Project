@@ -1,0 +1,4 @@
+.env
+uploads/evidence/*
+!uploads/evidence/.gitkeep
+node_modules/

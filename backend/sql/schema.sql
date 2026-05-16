@@ -1,0 +1,64 @@
+CREATE DATABASE IF NOT EXISTS renter_dispute_app;
+USE renter_dispute_app;
+
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  full_name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('RENTER', 'LANDLORD') NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cases (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  renter_user_id INT NOT NULL,
+  status VARCHAR(50) NOT NULL,
+  renter_full_name VARCHAR(255) NOT NULL,
+  renter_email VARCHAR(255) NOT NULL,
+  renter_phone VARCHAR(50),
+  landlord_full_name VARCHAR(255) NOT NULL,
+  landlord_email VARCHAR(255) NOT NULL,
+  landlord_phone VARCHAR(50),
+  property_address VARCHAR(500) NOT NULL,
+  city VARCHAR(100),
+  state VARCHAR(50) NOT NULL,
+  zip_code VARCHAR(20),
+  dispute_type VARCHAR(50) NOT NULL,
+  security_deposit_amount DECIMAL(10, 2),
+  amount_requested DECIMAL(10, 2),
+  lease_start_date DATE,
+  lease_end_date DATE,
+  move_out_date DATE,
+  dispute_description TEXT NOT NULL,
+  evidence_description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_cases_renter_user
+    FOREIGN KEY (renter_user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+);
+
+CREATE INDEX idx_cases_renter_user_id ON cases(renter_user_id);
+CREATE INDEX idx_cases_landlord_email ON cases(landlord_email);
+
+CREATE TABLE IF NOT EXISTS evidence_files (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  case_id INT NOT NULL,
+  uploaded_by_user_id INT NOT NULL,
+  uploaded_by_role ENUM('RENTER', 'LANDLORD') NOT NULL,
+  original_filename VARCHAR(255) NOT NULL,
+  stored_filename VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(100) NOT NULL,
+  file_size_bytes INT NOT NULL,
+  storage_path VARCHAR(500) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_evidence_case
+    FOREIGN KEY (case_id) REFERENCES cases(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_evidence_uploaded_by_user
+    FOREIGN KEY (uploaded_by_user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+);
+
+CREATE INDEX idx_evidence_case_id ON evidence_files(case_id);
