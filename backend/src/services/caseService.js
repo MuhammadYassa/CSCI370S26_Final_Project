@@ -19,6 +19,8 @@ function mapCaseSummary(row) {
 }
 
 function mapCaseDetail(row) {
+  const generatedForm = mapGeneratedFormSummary(row);
+
   return {
     caseId: row.id,
     status: row.status,
@@ -41,9 +43,46 @@ function mapCaseDetail(row) {
     moveOutDate: row.move_out_date,
     disputeDescription: row.dispute_description,
     evidenceDescription: row.evidence_description,
-    generatedForm: null,
+    generatedForm,
     landlordResponse: null,
     arbitrationResult: null
+  };
+}
+
+function parseJsonColumn(value, fallback) {
+  if (value === undefined || value === null || value === '') {
+    return fallback;
+  }
+
+  if (typeof value === 'string') {
+    return JSON.parse(value);
+  }
+
+  return value;
+}
+
+function mapGeneratedFormSummary(row) {
+  if (!row.generated_form_id) {
+    return null;
+  }
+
+  return {
+    id: row.generated_form_id,
+    selectedFilingPath: row.generated_selected_filing_path,
+    selectedFormType: row.generated_selected_form_type,
+    selectedFormName:
+      row.generated_selected_form_type === 'UNSUPPORTED_FORM_TYPE'
+        ? null
+        : row.generated_selected_form_name,
+    filingDestination: row.generated_filing_destination,
+    reasonSelected: row.generated_reason_selected,
+    missingFields: parseJsonColumn(row.generated_missing_fields, []),
+    generatedFormData: parseJsonColumn(row.generated_form_data, null),
+    generatedPdfFilename: row.generated_pdf_filename,
+    generatedPdfUrl: row.generated_pdf_url,
+    filingInstructions: parseJsonColumn(row.generated_filing_instructions, []),
+    createdAt: row.generated_created_at,
+    updatedAt: row.generated_updated_at
   };
 }
 
@@ -133,9 +172,24 @@ async function getCaseRowById(caseId) {
   const pool = getPool();
   const [rows] = await pool.execute(
     `
-      SELECT *
-      FROM cases
-      WHERE id = ?
+      SELECT
+        c.*,
+        gf.id AS generated_form_id,
+        gf.selected_filing_path AS generated_selected_filing_path,
+        gf.selected_form_type AS generated_selected_form_type,
+        gf.selected_form_name AS generated_selected_form_name,
+        gf.filing_destination AS generated_filing_destination,
+        gf.reason_selected AS generated_reason_selected,
+        gf.missing_fields AS generated_missing_fields,
+        gf.generated_form_data AS generated_form_data,
+        gf.generated_pdf_filename AS generated_pdf_filename,
+        gf.generated_pdf_url AS generated_pdf_url,
+        gf.filing_instructions AS generated_filing_instructions,
+        gf.created_at AS generated_created_at,
+        gf.updated_at AS generated_updated_at
+      FROM cases c
+      LEFT JOIN generated_forms gf ON gf.case_id = c.id
+      WHERE c.id = ?
       LIMIT 1
     `,
     [numericCaseId]
@@ -153,6 +207,19 @@ async function getAuthorizedCaseRow(user, caseId) {
   const caseRow = await getCaseRowById(caseId);
 
   if (!userCanAccessCase(user, caseRow)) {
+    throw new ForbiddenError('You do not have access to this case.');
+  }
+
+  return caseRow;
+}
+
+async function getRenterOwnedCaseRow(user, caseId) {
+  if (user.role !== 'RENTER') {
+    throw new ForbiddenError('Only the renter who owns this case can access this form workflow.');
+  }
+
+  const caseRow = await getCaseRowById(caseId);
+  if (caseRow.renter_user_id !== user.id) {
     throw new ForbiddenError('You do not have access to this case.');
   }
 
@@ -197,10 +264,23 @@ async function getCaseByIdForUser(user, caseId) {
   return mapCaseDetail(caseRow);
 }
 
+async function updateCaseStatus(caseId, status) {
+  await getPool().execute(
+    `
+      UPDATE cases
+      SET status = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `,
+    [status, caseId]
+  );
+}
+
 module.exports = {
   INITIAL_CASE_STATUS,
   createCase,
   getAuthorizedCaseRow,
+  getRenterOwnedCaseRow,
   getCasesForUser,
-  getCaseByIdForUser
+  getCaseByIdForUser,
+  updateCaseStatus
 };

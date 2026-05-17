@@ -2,6 +2,22 @@ const { ValidationError } = require('./errors');
 
 const SUPPORTED_ROLES = ['RENTER', 'LANDLORD'];
 const SUPPORTED_DISPUTE_TYPES = ['SECURITY_DEPOSIT', 'MAINTENANCE', 'OTHER'];
+const SUPPORTED_SECURITY_DEPOSIT_ISSUE_TYPES = [
+  'INTEREST_NOT_PAID',
+  'TRUST_ACCOUNT_NOT_DISCLOSED',
+  'DEPOSIT_NOT_RETURNED_GENERAL',
+  'DEPOSIT_NOT_RETURNED_NO_DAMAGE_DISPUTE',
+  'WITHHELD_FOR_DAMAGE',
+  'WITHHELD_FOR_UNPAID_RENT',
+  'SEEKING_MONEY_JUDGMENT'
+];
+const SUPPORTED_BOROUGHS = [
+  'MANHATTAN',
+  'BROOKLYN',
+  'QUEENS',
+  'BRONX',
+  'STATEN_ISLAND'
+];
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -20,6 +36,37 @@ function normalizeOptionalString(value) {
 
   const trimmed = String(value).trim();
   return trimmed === '' ? null : trimmed;
+}
+
+function normalizeOptionalBoolean(value, fieldName, fields) {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  if (typeof value !== 'boolean') {
+    fields[fieldName] = 'Must be true or false.';
+    return null;
+  }
+
+  return value;
+}
+
+function normalizeOptionalArrayOfStrings(value, fieldName, fields) {
+  if (value === undefined || value === null || value === '') {
+    return [];
+  }
+
+  const values = Array.isArray(value) ? value : [value];
+  const normalized = values
+    .map((item) => normalizeOptionalString(item))
+    .filter(Boolean);
+
+  if (normalized.length === 0 && values.length > 0) {
+    fields[fieldName] = 'Must contain at least one valid value.';
+    return [];
+  }
+
+  return normalized;
 }
 
 function validateDateString(value) {
@@ -211,6 +258,126 @@ function validateCaseInput(payload) {
   };
 }
 
+function validateFormAnswersInput(payload) {
+  const fields = {};
+
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new ValidationError('Please correct the highlighted fields.', {
+      answers: 'Answers payload is required.'
+    });
+  }
+
+  const rawAnswers = payload.answers;
+  if (!rawAnswers || typeof rawAnswers !== 'object' || Array.isArray(rawAnswers)) {
+    throw new ValidationError('Please correct the highlighted fields.', {
+      answers: 'Answers must be a JSON object.'
+    });
+  }
+
+  const answers = { ...rawAnswers };
+  const normalizedAnswers = {};
+
+  const dateFields = [
+    'dateDemandedReturn',
+    'dateComplainedToLandlord',
+    'dateOfOccurrence',
+    'moveInDate',
+    'dateLandlordNotified',
+    'relatedCaseNextCourtDate',
+    'securityDepositDatePaid'
+  ];
+  const booleanFields = [
+    'attemptedResolution',
+    'wantsRepairs',
+    'landlordClaimsDamage',
+    'landlordClaimsUnpaidRent',
+    'heatHotWaterIssue',
+    'emergencyCondition',
+    'hpdInspectionRequested',
+    'relatedCaseExists',
+    'confirmationTenantLivesAtProperty',
+    'confirmationTenantLivedThereThirtyDays',
+    'confirmationTenantHasLeaseOrAgreement',
+    'rentControlledOrStabilized',
+    'securityDepositInterestReceived',
+    'priorCourtProceedings'
+  ];
+  const arrayFields = ['maintenanceIssueTypes', 'roomsAffected', 'commonAreaIssues', 'formerLandlords'];
+  const numericFields = ['mostRecentMonthlyRent'];
+
+  for (const [key, value] of Object.entries(answers)) {
+    if (dateFields.includes(key)) {
+      normalizedAnswers[key] = parseOptionalDate(value, key, fields);
+      continue;
+    }
+
+    if (booleanFields.includes(key)) {
+      normalizedAnswers[key] = normalizeOptionalBoolean(value, key, fields);
+      continue;
+    }
+
+    if (arrayFields.includes(key)) {
+      normalizedAnswers[key] = normalizeOptionalArrayOfStrings(value, key, fields);
+      continue;
+    }
+
+    if (numericFields.includes(key)) {
+      normalizedAnswers[key] = parseOptionalNonNegativeNumber(value, key, fields);
+      continue;
+    }
+
+    if (key === 'securityDepositIssueType') {
+      const normalizedValue = normalizeOptionalString(value);
+      if (
+        normalizedValue &&
+        !SUPPORTED_SECURITY_DEPOSIT_ISSUE_TYPES.includes(normalizedValue.toUpperCase())
+      ) {
+        fields[key] = 'Unsupported security deposit issue type.';
+      } else {
+        normalizedAnswers[key] = normalizedValue ? normalizedValue.toUpperCase() : null;
+      }
+      continue;
+    }
+
+    if (key === 'borough') {
+      const normalizedValue = normalizeOptionalString(value);
+      if (normalizedValue && !SUPPORTED_BOROUGHS.includes(normalizedValue.toUpperCase())) {
+        fields[key] = 'Unsupported borough value.';
+      } else {
+        normalizedAnswers[key] = normalizedValue ? normalizedValue.toUpperCase() : null;
+      }
+      continue;
+    }
+
+    if (key === 'county') {
+      normalizedAnswers[key] = normalizeOptionalString(value);
+      continue;
+    }
+
+    normalizedAnswers[key] = normalizeOptionalString(value);
+  }
+
+  if (Object.keys(fields).length > 0) {
+    throw new ValidationError('Please correct the highlighted fields.', fields);
+  }
+
+  return {
+    answers: normalizedAnswers
+  };
+}
+
+function validateGenerateFormInput(payload) {
+  if (!payload || payload.confirmGenerate !== true) {
+    throw new ValidationError('Please correct the highlighted fields.', {
+      confirmGenerate: 'confirmGenerate must be true.'
+    });
+  }
+
+  return {
+    confirmGenerate: true
+  };
+}
+
 module.exports = {
   SUPPORTED_DISPUTE_TYPES,
   SUPPORTED_ROLES,
@@ -218,5 +385,8 @@ module.exports = {
   normalizeOptionalString,
   validateRegistrationInput,
   validateLoginInput,
-  validateCaseInput
+  validateCaseInput,
+  validateFormAnswersInput,
+  validateGenerateFormInput,
+  validateDateString
 };

@@ -1,4 +1,6 @@
 .env
 uploads/evidence/*
 !uploads/evidence/.gitkeep
+generated/forms/*.pdf
+!generated/forms/.gitkeep
 node_modules/

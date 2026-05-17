@@ -1,8 +1,12 @@
 const express = require('express');
 const caseController = require('../controllers/caseController');
 const evidenceController = require('../controllers/evidenceController');
+const formController = require('../controllers/formController');
 const { authMiddleware } = require('../middleware/authMiddleware');
-const { requireCaseAccess } = require('../middleware/caseAccessMiddleware');
+const {
+  requireCaseAccess,
+  requireRenterOwnedCaseAccess
+} = require('../middleware/caseAccessMiddleware');
 const { evidenceUploadMiddleware } = require('../middleware/uploadMiddleware');
 const { asyncHandler } = require('../utils/asyncHandler');
 
@@ -13,6 +17,26 @@ router.use(authMiddleware);
 router.get('/cases', asyncHandler(caseController.listCases));
 router.post('/cases', asyncHandler(caseController.createCase));
 router.get('/cases/:caseId', asyncHandler(caseController.getCaseById));
+router.get(
+  '/cases/:caseId/form-requirements',
+  requireRenterOwnedCaseAccess,
+  asyncHandler(formController.getFormRequirements)
+);
+router.patch(
+  '/cases/:caseId/form-answers',
+  requireRenterOwnedCaseAccess,
+  asyncHandler(formController.saveFormAnswers)
+);
+router.post(
+  '/cases/:caseId/generate-form',
+  requireRenterOwnedCaseAccess,
+  asyncHandler(formController.generateForm)
+);
+router.get(
+  '/cases/:caseId/generated-form',
+  requireRenterOwnedCaseAccess,
+  asyncHandler(formController.getGeneratedFormMetadata)
+);
 router.post(
   '/cases/:caseId/evidence',
   requireCaseAccess,
@@ -27,6 +51,10 @@ router.get(
 router.get(
   '/evidence/:evidenceId/file',
   asyncHandler(evidenceController.getEvidenceFile)
+);
+router.get(
+  '/generated-forms/:generatedFormId/file',
+  asyncHandler(formController.downloadGeneratedFormFile)
 );
 
 module.exports = router;

@@ -9,6 +9,16 @@ async function requireCaseAccess(req, res, next) {
   }
 }
 
+async function requireRenterOwnedCaseAccess(req, res, next) {
+  try {
+    req.caseRecord = await caseService.getRenterOwnedCaseRow(req.user, req.params.caseId);
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
-  requireCaseAccess
+  requireCaseAccess,
+  requireRenterOwnedCaseAccess
 };
