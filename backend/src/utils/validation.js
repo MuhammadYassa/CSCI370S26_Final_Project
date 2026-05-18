@@ -378,15 +378,67 @@ function validateGenerateFormInput(payload) {
   };
 }
 
+function validateLandlordResponseInput(payload) {
+  const fields = {};
+
+  const landlordFullName = normalizeOptionalString(payload.landlordFullName);
+  const landlordEmail = normalizeEmail(payload.landlordEmail);
+  const responseStatement = normalizeOptionalString(payload.responseStatement);
+  const amountLandlordClaims = parseOptionalNonNegativeNumber(
+    payload.amountLandlordClaims,
+    'amountLandlordClaims',
+    fields
+  );
+  const evidenceDescription = normalizeOptionalString(payload.evidenceDescription);
+
+  if (!landlordFullName) {
+    fields.landlordFullName = 'Landlord full name is required.';
+  }
+
+  if (!landlordEmail || !EMAIL_PATTERN.test(landlordEmail)) {
+    fields.landlordEmail = 'Valid landlord email is required.';
+  }
+
+  if (!responseStatement) {
+    fields.responseStatement = 'Response statement is required.';
+  }
+
+  if (Object.keys(fields).length > 0) {
+    throw new ValidationError('Please correct the highlighted fields.', fields);
+  }
+
+  return {
+    landlordFullName,
+    landlordEmail,
+    responseStatement,
+    amountLandlordClaims,
+    evidenceDescription
+  };
+}
+
+function validateArbitrationRequestInput(payload) {
+  if (!payload || payload.confirmArbitration !== true) {
+    throw new ValidationError('Please correct the highlighted fields.', {
+      confirmArbitration: 'confirmArbitration must be true.'
+    });
+  }
+
+  return {
+    confirmArbitration: true
+  };
+}
+
 module.exports = {
   SUPPORTED_DISPUTE_TYPES,
   SUPPORTED_ROLES,
   normalizeEmail,
   normalizeOptionalString,
+  validateArbitrationRequestInput,
   validateRegistrationInput,
   validateLoginInput,
   validateCaseInput,
   validateFormAnswersInput,
   validateGenerateFormInput,
+  validateLandlordResponseInput,
   validateDateString
 };

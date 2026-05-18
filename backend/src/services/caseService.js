@@ -20,6 +20,8 @@ function mapCaseSummary(row) {
 
 function mapCaseDetail(row) {
   const generatedForm = mapGeneratedFormSummary(row);
+  const landlordResponse = mapLandlordResponseSummary(row);
+  const arbitrationResult = mapArbitrationResultSummary(row);
 
   return {
     caseId: row.id,
@@ -44,8 +46,8 @@ function mapCaseDetail(row) {
     disputeDescription: row.dispute_description,
     evidenceDescription: row.evidence_description,
     generatedForm,
-    landlordResponse: null,
-    arbitrationResult: null
+    landlordResponse,
+    arbitrationResult
   };
 }
 
@@ -83,6 +85,53 @@ function mapGeneratedFormSummary(row) {
     filingInstructions: parseJsonColumn(row.generated_filing_instructions, []),
     createdAt: row.generated_created_at,
     updatedAt: row.generated_updated_at
+  };
+}
+
+function mapLandlordResponseSummary(row) {
+  if (!row.landlord_response_id) {
+    return null;
+  }
+
+  return {
+    id: row.landlord_response_id,
+    landlordUserId: row.landlord_response_user_id,
+    landlordFullName: row.response_landlord_full_name,
+    landlordEmail: row.response_landlord_email,
+    responseStatement: row.response_statement,
+    amountLandlordClaims:
+      row.response_amount_landlord_claims === null
+        ? null
+        : Number(row.response_amount_landlord_claims),
+    evidenceDescription: row.response_evidence_description,
+    createdAt: row.landlord_response_created_at,
+    updatedAt: row.landlord_response_updated_at
+  };
+}
+
+function mapArbitrationResultSummary(row) {
+  if (!row.arbitration_result_id) {
+    return null;
+  }
+
+  return {
+    id: row.arbitration_result_id,
+    neutralSummary: row.arbitration_neutral_summary,
+    renterMainClaims: parseJsonColumn(row.arbitration_renter_main_claims, []),
+    landlordMainClaims: parseJsonColumn(row.arbitration_landlord_main_claims, []),
+    imageEvidenceFindings: parseJsonColumn(row.arbitration_image_evidence_findings, {
+      renterEvidence: [],
+      landlordEvidence: [],
+      limitations: []
+    }),
+    keyDisputedFacts: parseJsonColumn(row.arbitration_key_disputed_facts, []),
+    missingEvidence: parseJsonColumn(row.arbitration_missing_evidence, []),
+    suggestedResolution: row.arbitration_suggested_resolution,
+    recommendedNextSteps: parseJsonColumn(row.arbitration_recommended_next_steps, []),
+    confidenceLevel: row.arbitration_confidence_level,
+    disclaimer: row.arbitration_disclaimer,
+    createdAt: row.arbitration_created_at,
+    updatedAt: row.arbitration_updated_at
   };
 }
 
@@ -186,9 +235,33 @@ async function getCaseRowById(caseId) {
         gf.generated_pdf_url AS generated_pdf_url,
         gf.filing_instructions AS generated_filing_instructions,
         gf.created_at AS generated_created_at,
-        gf.updated_at AS generated_updated_at
+        gf.updated_at AS generated_updated_at,
+        lr.id AS landlord_response_id,
+        lr.landlord_user_id AS landlord_response_user_id,
+        lr.landlord_full_name AS response_landlord_full_name,
+        lr.landlord_email AS response_landlord_email,
+        lr.response_statement AS response_statement,
+        lr.amount_landlord_claims AS response_amount_landlord_claims,
+        lr.evidence_description AS response_evidence_description,
+        lr.created_at AS landlord_response_created_at,
+        lr.updated_at AS landlord_response_updated_at,
+        ar.id AS arbitration_result_id,
+        ar.neutral_summary AS arbitration_neutral_summary,
+        ar.renter_main_claims AS arbitration_renter_main_claims,
+        ar.landlord_main_claims AS arbitration_landlord_main_claims,
+        ar.image_evidence_findings AS arbitration_image_evidence_findings,
+        ar.key_disputed_facts AS arbitration_key_disputed_facts,
+        ar.missing_evidence AS arbitration_missing_evidence,
+        ar.suggested_resolution AS arbitration_suggested_resolution,
+        ar.recommended_next_steps AS arbitration_recommended_next_steps,
+        ar.confidence_level AS arbitration_confidence_level,
+        ar.disclaimer AS arbitration_disclaimer,
+        ar.created_at AS arbitration_created_at,
+        ar.updated_at AS arbitration_updated_at
       FROM cases c
       LEFT JOIN generated_forms gf ON gf.case_id = c.id
+      LEFT JOIN landlord_responses lr ON lr.case_id = c.id
+      LEFT JOIN arbitration_results ar ON ar.case_id = c.id
       WHERE c.id = ?
       LIMIT 1
     `,
@@ -280,6 +353,7 @@ module.exports = {
   createCase,
   getAuthorizedCaseRow,
   getRenterOwnedCaseRow,
+  getCaseRowById,
   getCasesForUser,
   getCaseByIdForUser,
   updateCaseStatus

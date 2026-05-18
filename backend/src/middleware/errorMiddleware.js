@@ -26,6 +26,10 @@ function errorMiddleware(err, req, res, next) {
       };
     }
   } else if (!(err instanceof AppError)) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[errorMiddleware] Unhandled error:', err);
+    }
+
     statusCode = 500;
     code = 'SERVER_ERROR';
     message = 'An unexpected error occurred.';

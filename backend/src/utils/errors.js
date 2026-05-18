@@ -37,11 +37,21 @@ class ServerError extends AppError {
   }
 }
 
+class AiApiError extends AppError {
+  constructor(
+    message = 'AI arbitration could not be completed at this time.',
+    statusCode = 502
+  ) {
+    super('AI_API_ERROR', message, statusCode);
+  }
+}
+
 module.exports = {
   AppError,
   ValidationError,
   UnauthorizedError,
   ForbiddenError,
   NotFoundError,
-  ServerError
+  ServerError,
+  AiApiError
 };

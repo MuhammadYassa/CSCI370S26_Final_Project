@@ -5,10 +5,13 @@ const caseService = require('./caseService');
 const { NotFoundError, ValidationError } = require('../utils/errors');
 
 const backendRoot = path.resolve(__dirname, '..', '..');
+const uploadsEvidenceRoot = path.resolve(backendRoot, 'uploads', 'evidence');
 
 function mapEvidenceRow(row, baseUrl) {
   return {
     evidenceId: row.id,
+    uploadedByUserId: row.uploaded_by_user_id,
+    uploadedByRole: row.uploaded_by_role,
     originalFilename: row.original_filename,
     mimeType: row.mime_type,
     fileSizeBytes: row.file_size_bytes,
@@ -18,19 +21,40 @@ function mapEvidenceRow(row, baseUrl) {
 }
 
 function buildEvidenceReference(row) {
-  const absolutePath = path.resolve(backendRoot, row.storage_path);
+  const absolutePath = resolveEvidenceAbsolutePath(row.storage_path, true);
 
   return {
     evidenceId: row.id,
     caseId: row.case_id,
+    uploadedByUserId: row.uploaded_by_user_id,
+    uploadedByRole: row.uploaded_by_role,
     originalFilename: row.original_filename,
     storedFilename: row.stored_filename,
     mimeType: row.mime_type,
     fileSizeBytes: row.file_size_bytes,
     storagePath: row.storage_path,
     absolutePath,
-    createdAt: row.created_at
+    createdAt: row.created_at,
+    fileUrl: `/api/evidence/${row.id}/file`
   };
+}
+
+function resolveEvidenceAbsolutePath(storagePath, safeMode = false) {
+  const absolutePath = path.resolve(backendRoot, storagePath || '');
+  const relativePath = path.relative(uploadsEvidenceRoot, absolutePath);
+
+  if (
+    relativePath.startsWith('..') ||
+    path.isAbsolute(relativePath)
+  ) {
+    if (safeMode) {
+      return null;
+    }
+
+    throw new NotFoundError('Evidence file not found.');
+  }
+
+  return absolutePath;
 }
 
 async function cleanupFiles(files) {
@@ -149,7 +173,14 @@ async function uploadEvidenceFiles(user, caseId, files, baseUrl) {
   const placeholders = insertedIds.map(() => '?').join(', ');
   const [rows] = await getPool().execute(
     `
-      SELECT id, original_filename, mime_type, file_size_bytes, created_at
+      SELECT
+        id,
+        uploaded_by_user_id,
+        uploaded_by_role,
+        original_filename,
+        mime_type,
+        file_size_bytes,
+        created_at
       FROM evidence_files
       WHERE id IN (${placeholders})
       ORDER BY created_at ASC, id ASC
@@ -168,7 +199,14 @@ async function getEvidenceForCase(user, caseId, baseUrl) {
 
   const [rows] = await pool.execute(
     `
-      SELECT id, original_filename, mime_type, file_size_bytes, created_at
+      SELECT
+        id,
+        uploaded_by_user_id,
+        uploaded_by_role,
+        original_filename,
+        mime_type,
+        file_size_bytes,
+        created_at
       FROM evidence_files
       WHERE case_id = ?
       ORDER BY created_at ASC, id ASC
@@ -192,6 +230,8 @@ async function getEvidenceReferencesForCase(caseId) {
       SELECT
         id,
         case_id,
+        uploaded_by_user_id,
+        uploaded_by_role,
         original_filename,
         stored_filename,
         mime_type,
@@ -243,7 +283,7 @@ async function getEvidenceFileForUser(user, evidenceId) {
   return {
     originalFilename: evidenceRow.original_filename,
     mimeType: evidenceRow.mime_type,
-    absolutePath: path.resolve(backendRoot, evidenceRow.storage_path)
+    absolutePath: resolveEvidenceAbsolutePath(evidenceRow.storage_path)
   };
 }
 
@@ -251,5 +291,6 @@ module.exports = {
   uploadEvidenceFiles,
   getEvidenceForCase,
   getEvidenceFileForUser,
-  getEvidenceReferencesForCase
+  getEvidenceReferencesForCase,
+  resolveEvidenceAbsolutePath
 };

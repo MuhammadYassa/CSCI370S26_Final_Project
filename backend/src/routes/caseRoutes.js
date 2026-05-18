@@ -2,6 +2,8 @@ const express = require('express');
 const caseController = require('../controllers/caseController');
 const evidenceController = require('../controllers/evidenceController');
 const formController = require('../controllers/formController');
+const landlordResponseController = require('../controllers/landlordResponseController');
+const arbitrationController = require('../controllers/arbitrationController');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const {
   requireCaseAccess,
@@ -17,6 +19,22 @@ router.use(authMiddleware);
 router.get('/cases', asyncHandler(caseController.listCases));
 router.post('/cases', asyncHandler(caseController.createCase));
 router.get('/cases/:caseId', asyncHandler(caseController.getCaseById));
+router.post(
+  '/cases/:caseId/landlord-response',
+  asyncHandler(landlordResponseController.saveLandlordResponse)
+);
+router.get(
+  '/cases/:caseId/landlord-response',
+  asyncHandler(landlordResponseController.getLandlordResponse)
+);
+router.post(
+  '/cases/:caseId/arbitration',
+  asyncHandler(arbitrationController.generateArbitration)
+);
+router.get(
+  '/cases/:caseId/arbitration',
+  asyncHandler(arbitrationController.getArbitration)
+);
 router.get(
   '/cases/:caseId/form-requirements',
   requireRenterOwnedCaseAccess,
