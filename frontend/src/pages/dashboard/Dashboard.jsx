@@ -1,97 +1,130 @@
+import { useEffect, useState } from "react";
+
+import { getCases } from "../../api/caseApi";
+
+import Layout from "../../components/Layout";
+import Button from "../../components/Button";
+import Card from "../../components/Card";
+
 function Dashboard() {
-  const mockCases = [
-    {
-      caseId: 1,
-      disputeType: "SECURITY_DEPOSIT",
-      status: "FORM_READY",
-      propertyAddress: "123 Main Street, Queens, NY",
-      amountRequested: 1200,
-      createdAt: "2026-05-16",
-    },
-    {
-      caseId: 2,
-      disputeType: "MAINTENANCE",
-      status: "INTAKE_SUBMITTED",
-      propertyAddress: "45 Hillside Ave, Queens, NY",
-      amountRequested: 800,
-      createdAt: "2026-05-15",
-    },
-  ];
+
+  const [cases, setCases] = useState([]);
+
+  // Load Cases
+  useEffect(() => {
+
+    async function loadCases() {
+
+      const data = await getCases();
+
+      setCases(data);
+    }
+
+    loadCases();
+
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      
-      {/* Navbar */}
-      <div className="bg-white shadow-md px-8 py-4 flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-blue-600">
-          Rental Dispute Resolver
-        </h1>
+    <Layout>
 
-        <button className="bg-red-500 text-white px-4 py-2 rounded-lg">
-          Logout
-        </button>
-      </div>
+      {/* Top Section */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6 mb-8">
 
-      {/* Main Content */}
-      <div className="p-8">
+        <div>
 
-        {/* Top Section */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h2 className="text-4xl font-bold text-gray-800">
-              Dashboard
-            </h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
+            Dashboard
+          </h2>
 
-            <p className="text-gray-500 mt-2">
-              Manage your dispute cases
-            </p>
-          </div>
+          <p className="text-gray-500 mt-2 text-sm md:text-base">
+            Manage your dispute cases
+          </p>
 
-          <button className="bg-blue-600 text-white px-5 py-3 rounded-xl hover:bg-blue-700">
-            + New Case
-          </button>
         </div>
 
-        {/* Case Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {mockCases.map((item) => (
-            <div
+        <Button href="/new-case">
+          Create New Case
+        </Button>
+
+      </div>
+
+      {/* Case Section */}
+      {cases.length === 0 ? (
+
+        <Card className="p-6 md:p-10 text-center">
+
+          <h2 className="text-2xl font-bold text-gray-700 mb-3">
+            No Cases Found
+          </h2>
+
+          <p className="text-gray-500 mb-6">
+            Create your first dispute case to begin.
+          </p>
+
+          <Button href="/new-case">
+            Create New Case
+          </Button>
+
+        </Card>
+
+      ) : (
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+
+          {cases.map((item) => (
+
+            <Card
               key={item.caseId}
-              className="bg-white p-6 rounded-2xl shadow-md"
+              className="hover:shadow-lg transition"
             >
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-2xl font-bold text-gray-800">
+
+              <div className="flex justify-between items-start mb-5 gap-4">
+
+                <h3 className="text-xl md:text-2xl font-bold text-gray-800 break-words">
                   {item.disputeType}
                 </h3>
 
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs md:text-sm whitespace-nowrap">
                   {item.status}
                 </span>
+
               </div>
 
-              <p className="text-gray-600 mb-3">
+              <p className="text-gray-600 mb-4 text-sm md:text-base">
                 {item.propertyAddress}
               </p>
 
-              <p className="mb-2">
+              <p className="mb-3 text-sm md:text-base">
+
                 <span className="font-semibold">
                   Amount Requested:
                 </span>{" "}
+
                 ${item.amountRequested}
+
               </p>
 
               <p className="text-sm text-gray-500">
                 Created At: {item.createdAt}
               </p>
 
-              <button className="mt-5 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                View Case
-              </button>
-            </div>
+              <div className="mt-6">
+
+                <Button href={`/cases/${item.caseId}`}>
+                  View Case
+                </Button>
+
+              </div>
+
+            </Card>
+
           ))}
+
         </div>
-      </div>
-    </div>
+
+      )}
+
+    </Layout>
   );
 }
 

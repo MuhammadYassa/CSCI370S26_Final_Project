@@ -1,7 +1,4 @@
 import { useState } from "react";
-import ErrorCard from "../ErrorCard";
-import Button from "../../components/Button";
-import { createCase } from "../../api/caseApi";
 
 function NewCase() {
   const [formData, setFormData] = useState({
@@ -38,23 +35,12 @@ function NewCase() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  // NEW
-  const [selectedFiles, setSelectedFiles] = useState([]);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
-  };
-
-  // NEW
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-
-    setSelectedFiles(files);
   };
 
   const handleSubmit = async (e) => {
@@ -65,44 +51,28 @@ function NewCase() {
       !formData.renterEmail ||
       !formData.disputeType
     ) {
-      setError("Please fill all required fields.");
+      alert("Please fill all required fields");
       return;
     }
 
     setLoading(true);
 
-    try {
+    setTimeout(() => {
+      console.log(formData);
 
-        await createCase(formData);
+      alert("Case submitted successfully!");
 
-        console.log(formData);
-        console.log(selectedFiles);
-
-        alert("Case submitted successfully!");
-
-    } catch {
-
-    setError("Failed to create case.");
-
-    } finally {
-
-    setLoading(false);
-    }
+      setLoading(false);
+    }, 1000);
   };
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md">
-
+        
         <h1 className="text-4xl font-bold text-blue-600 mb-8">
           Create New Dispute Case
         </h1>
-
-        {error && (
-            <div className="mb-6">
-                <ErrorCard message={error} />
-            </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
 
@@ -369,95 +339,16 @@ function NewCase() {
               className="w-full border p-3 rounded-lg mt-4"
               onChange={handleChange}
             />
-
-            {/* Evidence Upload */}
-            <div className="mt-6">
-
-              <label className="block text-lg font-semibold mb-3">
-                Upload Evidence
-              </label>
-
-              <div className="border-2 border-dashed border-gray-400 p-8 rounded-2xl bg-gray-50 text-center">
-
-                <p className="text-gray-600 mb-4">
-                  Drag and drop files here or select files
-                </p>
-
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  className="block mx-auto"
-                />
-
-                <p className="text-sm text-gray-500 mt-3">
-                  Supported: JPG, PNG, PDF
-                </p>
-
-              </div>
-
-            </div>
-
-            {/* Upload Preview */}
-            {selectedFiles.length > 0 && (
-
-              <div className="bg-white p-5 rounded-2xl shadow-md mt-6">
-
-                <h2 className="text-xl font-bold mb-4">
-                  Uploaded Files
-                </h2>
-
-                <ul className="space-y-2">
-
-                  {selectedFiles.map((file, index) => (
-
-                    <li
-                      key={index}
-                      className="border p-3 rounded-lg flex justify-between"
-                    >
-                      <span>{file.name}</span>
-
-                      <span className="text-gray-500 text-sm">
-                        {(file.size / 1024).toFixed(2)} KB
-                      </span>
-                    </li>
-
-                  ))}
-
-                </ul>
-
-              </div>
-
-            )}
-
-            {/* Validation */}
-            {selectedFiles.length === 0 && (
-
-              <p className="text-red-500 mt-4">
-                No evidence files uploaded yet.
-              </p>
-
-            )}
-
           </div>
 
           {/* Submit Button */}
-          <Button
+          <button
             type="submit"
             disabled={loading}
+            className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700"
           >
-            {loading ? (
-                <span className="flex items-center gap-2">
-
-                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-
-                    Submitting...
-
-                </span>
-            ) : (
-                "Submit Case"
-            )}
-          </Button>
+            {loading ? "Submitting..." : "Submit Case"}
+          </button>
 
         </form>
       </div>

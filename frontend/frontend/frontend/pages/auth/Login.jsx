@@ -2,14 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../../api/apiFetch";
 
-function Register() {
+function Login() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    fullName: "",
     email: "",
     password: "",
-    role: "RENTER",
   });
 
   const handleChange = (e) => {
@@ -23,15 +21,16 @@ function Register() {
     e.preventDefault();
 
     try {
-      await apiFetch("/auth/register", {
+      const data = await apiFetch("/auth/login", {
         method: "POST",
         body: JSON.stringify(formData),
       });
 
-      alert("Account created successfully!");
-      navigate("/login");
+      localStorage.setItem("token", data.token);
+
+      navigate("/dashboard");
     } catch (error) {
-      alert(error?.error?.message || "Registration failed");
+      alert(error?.error?.message || "Login failed");
     }
   };
 
@@ -39,18 +38,10 @@ function Register() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-xl shadow-md w-96">
         <h1 className="text-3xl font-bold mb-6 text-center text-blue-600">
-          Register
+          Login
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            name="fullName"
-            placeholder="Full Name"
-            className="w-full border p-3 rounded-lg"
-            onChange={handleChange}
-          />
-
           <input
             type="email"
             name="email"
@@ -67,31 +58,16 @@ function Register() {
             onChange={handleChange}
           />
 
-          <select
-            name="role"
-            className="w-full border p-3 rounded-lg"
-            onChange={handleChange}
-          >
-            <option value="RENTER">Renter</option>
-            <option value="LANDLORD">Landlord</option>
-          </select>
-
           <button
             type="submit"
             className="w-full bg-blue-600 text-white p-3 rounded-lg"
           >
-            Register
+            Login
           </button>
-          <p className="text-center mt-4">
-            Already have an account?{" "}
-            <a href="/login" className="text-blue-600 font-semibold">
-              Login
-            </a>
-          </p>
         </form>
       </div>
     </div>
   );
 }
 
-export default Register;
+export default Login;
