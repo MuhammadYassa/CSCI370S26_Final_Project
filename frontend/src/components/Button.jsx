@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 function Button({
   children,
   href,
@@ -26,12 +28,12 @@ function Button({
 
   if (href) {
     return (
-      <a
-        href={href}
+      <Link
+        to={href}
         className={`${baseStyles} ${variants[variant]}`}
       >
         {children}
-      </a>
+      </Link>
     );
   }
 

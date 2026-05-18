@@ -1,20 +1,25 @@
-const BASE_URL = "http://localhost:8080/api";
+import apiFetch from "./apiFetch";
 
+// GET ALL CASES
 export async function getCases() {
 
-  console.log(BASE_URL);
+  const response = await apiFetch.get("/cases");
 
-  return [];
+  return response.data.cases;
 }
 
-export async function getCaseById() {
+// GET SINGLE CASE
+export async function getCaseById(caseId) {
 
-  return null;
+  const response = await apiFetch.get(`/cases/${caseId}`);
+
+  return response.data;
 }
 
-export async function createCase() {
+// CREATE CASE
+export async function createCase(caseData) {
 
-  return {
-    success: true,
-  };
+  const response = await apiFetch.post("/cases", caseData);
+
+  return response.data;
 }

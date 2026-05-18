@@ -1,8 +1,14 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../../api/apiFetch";
+
+import {
+  useNavigate,
+  Link,
+} from "react-router-dom";
+
+import apiFetch from "../../api/apiFetch";
 
 function Register() {
+
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -12,7 +18,10 @@ function Register() {
     role: "RENTER",
   });
 
+  const [loading, setLoading] = useState(false);
+
   const handleChange = (e) => {
+
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -20,35 +29,58 @@ function Register() {
   };
 
   const handleSubmit = async (e) => {
+
     e.preventDefault();
 
+    setLoading(true);
+
     try {
-      await apiFetch("/auth/register", {
-        method: "POST",
-        body: JSON.stringify(formData),
-      });
+
+      await apiFetch.post(
+        "/auth/register",
+        formData
+      );
 
       alert("Account created successfully!");
+
       navigate("/login");
+
     } catch (error) {
-      alert(error?.error?.message || "Registration failed");
+
+      alert(
+        error?.response?.data?.message ||
+        "Registration failed"
+      );
+
+    } finally {
+
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-xl shadow-md w-96">
+
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+
+      <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
+
         <h1 className="text-3xl font-bold mb-6 text-center text-blue-600">
           Register
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+        >
+
           <input
             type="text"
             name="fullName"
             placeholder="Full Name"
             className="w-full border p-3 rounded-lg"
+            value={formData.fullName}
             onChange={handleChange}
+            required
           />
 
           <input
@@ -56,7 +88,9 @@ function Register() {
             name="email"
             placeholder="Email"
             className="w-full border p-3 rounded-lg"
+            value={formData.email}
             onChange={handleChange}
+            required
           />
 
           <input
@@ -64,32 +98,57 @@ function Register() {
             name="password"
             placeholder="Password"
             className="w-full border p-3 rounded-lg"
+            value={formData.password}
             onChange={handleChange}
+            required
           />
 
           <select
             name="role"
             className="w-full border p-3 rounded-lg"
+            value={formData.role}
             onChange={handleChange}
           >
-            <option value="RENTER">Renter</option>
-            <option value="LANDLORD">Landlord</option>
+
+            <option value="RENTER">
+              Renter
+            </option>
+
+            <option value="LANDLORD">
+              Landlord
+            </option>
+
           </select>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white p-3 rounded-lg"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
           >
-            Register
+
+            {loading
+              ? "Creating Account..."
+              : "Register"}
+
           </button>
+
           <p className="text-center mt-4">
+
             Already have an account?{" "}
-            <a href="/login" className="text-blue-600 font-semibold">
+
+            <Link
+              to="/login"
+              className="text-blue-600 font-semibold"
+            >
               Login
-            </a>
+            </Link>
+
           </p>
+
         </form>
+
       </div>
+
     </div>
   );
 }
