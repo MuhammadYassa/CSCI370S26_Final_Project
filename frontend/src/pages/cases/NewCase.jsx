@@ -39,8 +39,6 @@ function NewCase() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // NEW
   const [selectedFiles, setSelectedFiles] = useState([]);
 
   const handleChange = (e) => {
@@ -50,10 +48,8 @@ function NewCase() {
     });
   };
 
-  // NEW
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-
     setSelectedFiles(files);
   };
 
@@ -72,53 +68,58 @@ function NewCase() {
     setLoading(true);
 
     try {
+      await createCase(formData);
 
-        await createCase(formData);
-
-        console.log(formData);
-        console.log(selectedFiles);
-
-        alert("Case submitted successfully!");
-
+      alert("Case submitted successfully!");
     } catch {
-
-    setError("Failed to create case.");
-
+      setError("Failed to create case.");
     } finally {
-
-    setLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md">
+    <div className="min-h-screen bg-[#f5f7fa]">
+      {/* Hero */}
+      <div className="bg-gradient-to-r from-blue-600 to-sky-500 text-white py-16 px-6">
+        <div className="max-w-6xl mx-auto">
+          <p className="uppercase tracking-widest text-sm font-semibold mb-3">
+            RentShield AI
+          </p>
 
-        <h1 className="text-4xl font-bold text-blue-600 mb-8">
-          Create New Dispute Case
-        </h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
+            Create a Rental Dispute Case
+          </h1>
 
+          <p className="mt-4 text-blue-100 text-lg max-w-2xl">
+            Submit dispute details, upload evidence, and receive AI-assisted
+            guidance for your renter protection workflow.
+          </p>
+        </div>
+      </div>
+
+      {/* Form */}
+      <div className="max-w-6xl mx-auto px-6 py-10">
         {error && (
-            <div className="mb-6">
-                <ErrorCard message={error} />
-            </div>
+          <div className="mb-6">
+            <ErrorCard message={error} />
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
 
-          {/* Renter Information */}
-          <div>
-            <h2 className="text-2xl font-bold mb-4">
+          {/* Renter Info */}
+          <section className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
               Renter Information
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <input
                 type="text"
                 name="renterFullName"
                 placeholder="Renter Full Name"
-                className="border p-3 rounded-lg"
+                className="border border-gray-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onChange={handleChange}
               />
 
@@ -126,7 +127,7 @@ function NewCase() {
                 type="email"
                 name="renterEmail"
                 placeholder="Renter Email"
-                className="border p-3 rounded-lg"
+                className="border border-gray-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onChange={handleChange}
               />
 
@@ -134,26 +135,24 @@ function NewCase() {
                 type="text"
                 name="renterPhone"
                 placeholder="Renter Phone"
-                className="border p-3 rounded-lg"
+                className="border border-gray-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onChange={handleChange}
               />
-
             </div>
-          </div>
+          </section>
 
-          {/* Landlord Information */}
-          <div>
-            <h2 className="text-2xl font-bold mb-4">
+          {/* Landlord Info */}
+          <section className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
               Landlord Information
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <input
                 type="text"
                 name="landlordFullName"
                 placeholder="Landlord Full Name"
-                className="border p-3 rounded-lg"
+                className="border border-gray-200 rounded-xl p-4"
                 onChange={handleChange}
               />
 
@@ -161,7 +160,7 @@ function NewCase() {
                 type="email"
                 name="landlordEmail"
                 placeholder="Landlord Email"
-                className="border p-3 rounded-lg"
+                className="border border-gray-200 rounded-xl p-4"
                 onChange={handleChange}
               />
 
@@ -169,26 +168,24 @@ function NewCase() {
                 type="text"
                 name="landlordPhone"
                 placeholder="Landlord Phone"
-                className="border p-3 rounded-lg"
+                className="border border-gray-200 rounded-xl p-4"
                 onChange={handleChange}
               />
-
             </div>
-          </div>
+          </section>
 
-          {/* Property Information */}
-          <div>
-            <h2 className="text-2xl font-bold mb-4">
+          {/* Property */}
+          <section className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
               Property Information
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <input
                 type="text"
                 name="propertyAddress"
                 placeholder="Property Address"
-                className="border p-3 rounded-lg"
+                className="border border-gray-200 rounded-xl p-4"
                 onChange={handleChange}
               />
 
@@ -196,7 +193,7 @@ function NewCase() {
                 type="text"
                 name="city"
                 placeholder="City"
-                className="border p-3 rounded-lg"
+                className="border border-gray-200 rounded-xl p-4"
                 onChange={handleChange}
               />
 
@@ -204,7 +201,7 @@ function NewCase() {
                 type="text"
                 name="state"
                 placeholder="State"
-                className="border p-3 rounded-lg"
+                className="border border-gray-200 rounded-xl p-4"
                 onChange={handleChange}
               />
 
@@ -212,253 +209,99 @@ function NewCase() {
                 type="text"
                 name="zipCode"
                 placeholder="Zip Code"
-                className="border p-3 rounded-lg"
+                className="border border-gray-200 rounded-xl p-4"
                 onChange={handleChange}
               />
-
             </div>
-          </div>
+          </section>
 
-          {/* Dispute Information */}
-          <div>
-            <h2 className="text-2xl font-bold mb-4">
-              Dispute Information
+          {/* Dispute */}
+          <section className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Dispute Details
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
               <select
                 name="disputeType"
                 value={formData.disputeType}
-                className="border p-3 rounded-lg"
+                className="border border-gray-200 rounded-xl p-4"
                 onChange={handleChange}
               >
                 <option value="">Select Dispute Type</option>
-
-                <option value="SECURITY_DEPOSIT">
-                  Security Deposit
-                </option>
-
-                <option value="MAINTENANCE">
-                  Maintenance
-                </option>
-
-                <option value="LEASE_TERMINATION">
-                  Lease Termination
-                </option>
+                <option value="SECURITY_DEPOSIT">Security Deposit</option>
+                <option value="MAINTENANCE">Maintenance</option>
+                <option value="LEASE_TERMINATION">Lease Termination</option>
               </select>
-
-              {/* SECURITY DEPOSIT */}
-              {formData.disputeType === "SECURITY_DEPOSIT" && (
-                <div className="space-y-4">
-
-                  <input
-                    type="number"
-                    name="securityDepositAmount"
-                    placeholder="Security Deposit Amount"
-                    className="w-full border p-3 rounded-lg"
-                    onChange={handleChange}
-                  />
-
-                  <textarea
-                    name="depositReason"
-                    placeholder="Why is the deposit being withheld?"
-                    className="w-full border p-3 rounded-lg"
-                    rows="4"
-                    onChange={handleChange}
-                  />
-
-                </div>
-              )}
-
-              {/* MAINTENANCE */}
-              {formData.disputeType === "MAINTENANCE" && (
-                <div className="space-y-4">
-
-                  <input
-                    type="text"
-                    name="maintenanceIssue"
-                    placeholder="Maintenance Issue"
-                    className="w-full border p-3 rounded-lg"
-                    onChange={handleChange}
-                  />
-
-                  <textarea
-                    name="maintenanceDetails"
-                    placeholder="Describe the maintenance problem..."
-                    className="w-full border p-3 rounded-lg"
-                    rows="4"
-                    onChange={handleChange}
-                  />
-
-                </div>
-              )}
-
-              {/* LEASE TERMINATION */}
-              {formData.disputeType === "LEASE_TERMINATION" && (
-                <div className="space-y-4">
-
-                  <input
-                    type="date"
-                    name="terminationDate"
-                    className="w-full border p-3 rounded-lg"
-                    onChange={handleChange}
-                  />
-
-                  <textarea
-                    name="terminationReason"
-                    placeholder="Reason for lease termination..."
-                    className="w-full border p-3 rounded-lg"
-                    rows="4"
-                    onChange={handleChange}
-                  />
-
-                </div>
-              )}
 
               <input
                 type="number"
                 name="amountRequested"
                 placeholder="Amount Requested"
-                className="border p-3 rounded-lg"
-                onChange={handleChange}
-              />
-
-              <input
-                type="date"
-                name="leaseStartDate"
-                className="border p-3 rounded-lg"
-                onChange={handleChange}
-              />
-
-              <input
-                type="date"
-                name="leaseEndDate"
-                className="border p-3 rounded-lg"
-                onChange={handleChange}
-              />
-
-              <input
-                type="date"
-                name="moveOutDate"
-                className="border p-3 rounded-lg"
+                className="border border-gray-200 rounded-xl p-4"
                 onChange={handleChange}
               />
 
             </div>
-          </div>
 
-          {/* Description */}
-          <div>
-            <h2 className="text-2xl font-bold mb-4">
-              Dispute Description
+            <div className="mt-6">
+              <textarea
+                name="disputeDescription"
+                placeholder="Describe your dispute..."
+                rows="6"
+                className="w-full border border-gray-200 rounded-xl p-4"
+                onChange={handleChange}
+              />
+            </div>
+          </section>
+
+          {/* Upload */}
+          <section className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Upload Evidence
             </h2>
 
-            <textarea
-              name="disputeDescription"
-              placeholder="Describe your dispute..."
-              rows="5"
-              className="w-full border p-3 rounded-lg"
-              onChange={handleChange}
-            />
-
-            <textarea
-              name="evidenceDescription"
-              placeholder="Describe your evidence..."
-              rows="5"
-              className="w-full border p-3 rounded-lg mt-4"
-              onChange={handleChange}
-            />
-
-            {/* Evidence Upload */}
-            <div className="mt-6">
-
-              <label className="block text-lg font-semibold mb-3">
-                Upload Evidence
-              </label>
-
-              <div className="border-2 border-dashed border-gray-400 p-8 rounded-2xl bg-gray-50 text-center">
-
-                <p className="text-gray-600 mb-4">
-                  Drag and drop files here or select files
-                </p>
-
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  className="block mx-auto"
-                />
-
-                <p className="text-sm text-gray-500 mt-3">
-                  Supported: JPG, PNG, PDF
-                </p>
-
-              </div>
-
-            </div>
-
-            {/* Upload Preview */}
-            {selectedFiles.length > 0 && (
-
-              <div className="bg-white p-5 rounded-2xl shadow-md mt-6">
-
-                <h2 className="text-xl font-bold mb-4">
-                  Uploaded Files
-                </h2>
-
-                <ul className="space-y-2">
-
-                  {selectedFiles.map((file, index) => (
-
-                    <li
-                      key={index}
-                      className="border p-3 rounded-lg flex justify-between"
-                    >
-                      <span>{file.name}</span>
-
-                      <span className="text-gray-500 text-sm">
-                        {(file.size / 1024).toFixed(2)} KB
-                      </span>
-                    </li>
-
-                  ))}
-
-                </ul>
-
-              </div>
-
-            )}
-
-            {/* Validation */}
-            {selectedFiles.length === 0 && (
-
-              <p className="text-red-500 mt-4">
-                No evidence files uploaded yet.
+            <div className="border-2 border-dashed border-blue-200 bg-blue-50 rounded-3xl p-10 text-center">
+              <p className="text-gray-700 mb-4 text-lg">
+                Drag & drop files or select evidence documents
               </p>
 
-            )}
+              <input
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                className="block mx-auto"
+              />
 
+              <p className="text-sm text-gray-500 mt-4">
+                JPG, PNG, PDF supported
+              </p>
+            </div>
+
+            {selectedFiles.length > 0 && (
+              <div className="mt-6 space-y-3">
+                {selectedFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex justify-between"
+                  >
+                    <span>{file.name}</span>
+
+                    <span className="text-gray-500 text-sm">
+                      {(file.size / 1024).toFixed(2)} KB
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <div className="flex justify-end">
+            <Button type="submit" disabled={loading}>
+              {loading ? "Submitting..." : "Submit Case"}
+            </Button>
           </div>
-
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? (
-                <span className="flex items-center gap-2">
-
-                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-
-                    Submitting...
-
-                </span>
-            ) : (
-                "Submit Case"
-            )}
-          </Button>
-
         </form>
       </div>
     </div>

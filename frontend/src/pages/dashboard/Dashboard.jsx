@@ -1,131 +1,89 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { getCaseById } from "../../api/caseApi";
 
-import { getCases } from "../../api/caseApi";
+function CaseDetails() {
+  const { caseId } = useParams();
 
-import Layout from "../../components/Layout";
-import Button from "../../components/Button";
-import Card from "../../components/Card";
+  const [caseData, setCaseData] = useState(null);
+  const [error, setError] = useState("");
 
-function Dashboard() {
-
-  const [cases, setCases] = useState([]);
-
-  // Load Cases
   useEffect(() => {
+    async function loadCase() {
+      try {
+        console.log("Case ID:", caseId);
 
-    async function loadCases() {
+        const data = await getCaseById(caseId);
 
-      const data = await getCases();
-
-      setCases(data);
+        setCaseData(data.case || data.data || data);
+      } catch (err) {
+        console.error("Failed to load case:", err);
+        setError("Unable to load case details.");
+      }
     }
 
-    loadCases();
+    if (caseId) {
+      loadCase();
+    }
+  }, [caseId]);
 
-  }, []);
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-100 border border-red-300 rounded-xl p-6">
+          <h1 className="text-3xl font-bold text-red-700">
+            Unable to load case details.
+          </h1>
+
+          <p className="text-red-600 mt-2">
+            Please check the backend case details API.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!caseData) {
+    return (
+      <div className="p-8">
+        <h1 className="text-3xl font-bold">
+          Loading Case...
+        </h1>
+      </div>
+    );
+  }
 
   return (
-    <Layout>
+    <div className="p-8">
+      <div className="bg-white rounded-2xl shadow-lg p-8">
+        <h1 className="text-4xl font-bold mb-6">
+          Case #{caseId}
+        </h1>
 
-      {/* Top Section */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6 mb-8">
-
-        <div>
-
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
-            Dashboard
-          </h2>
-
-          <p className="text-gray-500 mt-2 text-sm md:text-base">
-            Manage your dispute cases
+        <div className="space-y-4">
+          <p>
+            <strong>Dispute Type:</strong>{" "}
+            {caseData.disputeType || "N/A"}
           </p>
 
+          <p>
+            <strong>Status:</strong>{" "}
+            {caseData.status || "Open"}
+          </p>
+
+          <p>
+            <strong>Property Address:</strong>{" "}
+            {caseData.propertyAddress || "N/A"}
+          </p>
+
+          <p>
+            <strong>Description:</strong>{" "}
+            {caseData.disputeDescription || "N/A"}
+          </p>
         </div>
-
-        <Button href="/new-case">
-          Create New Case
-        </Button>
-
       </div>
-
-      {/* Case Section */}
-      {cases.length === 0 ? (
-
-        <Card className="p-6 md:p-10 text-center">
-
-          <h2 className="text-2xl font-bold text-gray-700 mb-3">
-            No Cases Found
-          </h2>
-
-          <p className="text-gray-500 mb-6">
-            Create your first dispute case to begin.
-          </p>
-
-          <Button href="/new-case">
-            Create New Case
-          </Button>
-
-        </Card>
-
-      ) : (
-
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-
-          {cases.map((item) => (
-
-            <Card
-              key={item.caseId}
-              className="hover:shadow-lg transition"
-            >
-
-              <div className="flex justify-between items-start mb-5 gap-4">
-
-                <h3 className="text-xl md:text-2xl font-bold text-gray-800 break-words">
-                  {item.disputeType}
-                </h3>
-
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs md:text-sm whitespace-nowrap">
-                  {item.status}
-                </span>
-
-              </div>
-
-              <p className="text-gray-600 mb-4 text-sm md:text-base">
-                {item.propertyAddress}
-              </p>
-
-              <p className="mb-3 text-sm md:text-base">
-
-                <span className="font-semibold">
-                  Amount Requested:
-                </span>{" "}
-
-                ${item.amountRequested}
-
-              </p>
-
-              <p className="text-sm text-gray-500">
-                Created At: {item.createdAt}
-              </p>
-
-              <div className="mt-6">
-
-                <Button href={`/cases/${item.caseId}`}>
-                  View Case
-                </Button>
-
-              </div>
-
-            </Card>
-
-          ))}
-
-        </div>
-
-      )}
-
-    </Layout>
+    </div>
   );
 }
 
-export default Dashboard;
+export default CaseDetails;
