@@ -278,6 +278,9 @@ function validateFormAnswersInput(payload) {
   const normalizedAnswers = {};
 
   const dateFields = [
+    'leaseStartDate',
+    'leaseEndDate',
+    'moveOutDate',
     'dateDemandedReturn',
     'dateComplainedToLandlord',
     'dateOfOccurrence',
@@ -303,7 +306,8 @@ function validateFormAnswersInput(payload) {
     'priorCourtProceedings'
   ];
   const arrayFields = ['maintenanceIssueTypes', 'roomsAffected', 'commonAreaIssues', 'formerLandlords'];
-  const numericFields = ['mostRecentMonthlyRent'];
+  const numericFields = ['mostRecentMonthlyRent', 'amountRequested', 'securityDepositAmount', 'amountLandlordClaims'];
+  const emailFields = ['renterEmail', 'landlordEmail'];
 
   for (const [key, value] of Object.entries(answers)) {
     if (dateFields.includes(key)) {
@@ -323,6 +327,16 @@ function validateFormAnswersInput(payload) {
 
     if (numericFields.includes(key)) {
       normalizedAnswers[key] = parseOptionalNonNegativeNumber(value, key, fields);
+      continue;
+    }
+
+    if (emailFields.includes(key)) {
+      const normalizedValue = normalizeEmail(value);
+      if (normalizedValue && !EMAIL_PATTERN.test(normalizedValue)) {
+        fields[key] = 'Valid email is required.';
+      } else {
+        normalizedAnswers[key] = normalizedValue || null;
+      }
       continue;
     }
 

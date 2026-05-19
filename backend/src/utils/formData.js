@@ -239,9 +239,9 @@ function toArray(value) {
 
 function buildFormContext(caseRecord, savedAnswers, evidenceFiles) {
   const answers = savedAnswers || {};
-  const city = firstNonEmpty(caseRecord.city, answers.city);
-  const state = firstNonEmpty(caseRecord.state, answers.state);
-  const zipCode = firstNonEmpty(caseRecord.zipCode, answers.zipCode);
+  const city = firstNonEmpty(answers.city, caseRecord.city);
+  const state = firstNonEmpty(answers.state, caseRecord.state);
+  const zipCode = firstNonEmpty(answers.zipCode, caseRecord.zipCode);
   const claimantAddress = firstNonEmpty(answers.claimantAddress, answers.currentAddress);
   const defendantAddress = firstNonEmpty(answers.defendantAddress, answers.landlordAddress);
   const monthlyRent = firstNonEmpty(answers.monthlyRent, answers.mostRecentMonthlyRent);
@@ -252,27 +252,27 @@ function buildFormContext(caseRecord, savedAnswers, evidenceFiles) {
   const context = {
     caseId: caseRecord.caseId,
     status: caseRecord.status,
-    renterFullName: caseRecord.renterFullName,
-    renterEmail: caseRecord.renterEmail,
-    renterPhone: firstNonEmpty(caseRecord.renterPhone, answers.renterPhone),
-    landlordFullName: firstNonEmpty(caseRecord.landlordFullName, answers.landlordFullName),
-    landlordEmail: firstNonEmpty(caseRecord.landlordEmail, answers.landlordEmail),
-    landlordPhone: firstNonEmpty(caseRecord.landlordPhone, answers.landlordPhone),
-    propertyAddress: firstNonEmpty(caseRecord.propertyAddress, answers.propertyAddress),
+    renterFullName: firstNonEmpty(answers.renterFullName, caseRecord.renterFullName),
+    renterEmail: firstNonEmpty(answers.renterEmail, caseRecord.renterEmail),
+    renterPhone: firstNonEmpty(answers.renterPhone, caseRecord.renterPhone),
+    landlordFullName: firstNonEmpty(answers.landlordFullName, caseRecord.landlordFullName),
+    landlordEmail: firstNonEmpty(answers.landlordEmail, caseRecord.landlordEmail),
+    landlordPhone: firstNonEmpty(answers.landlordPhone, caseRecord.landlordPhone),
+    propertyAddress: firstNonEmpty(answers.propertyAddress, caseRecord.propertyAddress),
     city,
     state,
     zipCode,
-    disputeType: firstNonEmpty(caseRecord.disputeType, answers.disputeType),
+    disputeType: firstNonEmpty(answers.disputeType, caseRecord.disputeType),
     securityDepositAmount: firstNonEmpty(
-      caseRecord.securityDepositAmount,
-      answers.securityDepositAmount
+      answers.securityDepositAmount,
+      caseRecord.securityDepositAmount
     ),
-    amountRequested: firstNonEmpty(caseRecord.amountRequested, answers.amountRequested),
-    leaseStartDate: formatDate(firstNonEmpty(caseRecord.leaseStartDate, answers.leaseStartDate)),
-    leaseEndDate: formatDate(firstNonEmpty(caseRecord.leaseEndDate, answers.leaseEndDate)),
-    moveOutDate: formatDate(firstNonEmpty(caseRecord.moveOutDate, answers.moveOutDate)),
-    disputeDescription: firstNonEmpty(caseRecord.disputeDescription, answers.disputeDescription),
-    evidenceDescription: firstNonEmpty(caseRecord.evidenceDescription, answers.evidenceDescription),
+    amountRequested: firstNonEmpty(answers.amountRequested, caseRecord.amountRequested),
+    leaseStartDate: formatDate(firstNonEmpty(answers.leaseStartDate, caseRecord.leaseStartDate)),
+    leaseEndDate: formatDate(firstNonEmpty(answers.leaseEndDate, caseRecord.leaseEndDate)),
+    moveOutDate: formatDate(firstNonEmpty(answers.moveOutDate, caseRecord.moveOutDate)),
+    disputeDescription: firstNonEmpty(answers.disputeDescription, caseRecord.disputeDescription),
+    evidenceDescription: firstNonEmpty(answers.evidenceDescription, caseRecord.evidenceDescription),
     generatedDate: new Date().toISOString().slice(0, 10),
     claimantAddress,
     currentAddress: firstNonEmpty(answers.currentAddress, claimantAddress),
