@@ -7,7 +7,7 @@ dotenv.config();
 const app = require('./app');
 const { testConnection } = require('./config/db');
 
-const port = Number(process.env.PORT || 5000);
+const port = Number(process.env.PORT || 8080);
 const uploadsDirectory = path.resolve(__dirname, '..', 'uploads', 'evidence');
 fs.mkdirSync(uploadsDirectory, { recursive: true });
 
@@ -18,13 +18,7 @@ async function startServer() {
     console.log(`Backend server listening on port ${port}`);
   });
 }
-app.get('/', (req, res) => {
-  res.send('Backend is running!');
-});
 
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Frontend-backend connection works!' });
-});
 startServer().catch((error) => {
   console.error('Failed to start backend server.');
   console.error(error.message);
