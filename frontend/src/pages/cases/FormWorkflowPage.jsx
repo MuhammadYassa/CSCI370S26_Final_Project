@@ -1,425 +1,363 @@
-import { Link, useParams } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
-
+import { Link, useParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
-
 import FormField from '../../components/FormField';
 import StatusPill from '../../components/StatusPill';
-
 import { api } from '../../lib/api';
-
 import {
   coerceFieldValue,
   getBlueprintForPath
 } from '../../lib/formFieldCatalog';
-
 import {
   formatDateTime,
   titleFromFilingPath
 } from '../../lib/format';
-
 import { printDisputeSummary } from '../../lib/summaryPrint';
 
-const REQUIRED_FIELDS = [
-  'property_address',
-  'city',
-  'state',
-  'zip_code',
-  'landlord_name',
-  'landlord_phone',
-  'dispute_description'
-];
+function buildBaseSource(caseData) {
+  return {
+    ...caseData,
+    currentAddress: '',
+    claimantAddress: '',
+    claimantCity: caseData.city || '',
+    claimantState: caseData.state || '',
+    claimantZipCode: caseData.zipCode || '',
+    landlordAddress: '',
+    defendantBusinessName: caseData.landlordFullName || '',
+    defendantAddress: '',
+    defendantCity: caseData.city || '',
+    defendantState: caseData.state || '',
+    defendantZipCode: caseData.zipCode || '',
+    respondentName: caseData.landlordFullName || '',
+    respondentAddress: ''
+  };
+}
 
-export default function FormWorkflowPage() {
+function getFieldNames(path) {
+  return getBlueprintForPath(path).flatMap((section) => section.fields);
+}
+
+function buildInitialValues(caseData, currentAnswers, path) {
+  const source = {
+    ...buildBaseSource(caseData),
+    ...(currentAnswers || {})
+  };
+
+  return getFieldNames(path).reduce((accumulator, fieldName) => {
+    accumulator[fieldName] = coerceFieldValue(fieldName, source[fieldName]);
+    return accumulator;
+  }, {});
+}
+
+function FormWorkflowPage() {
   const { caseId } = useParams();
-  const navigate = useNavigate();
-
   const [caseData, setCaseData] = useState(null);
-  const [formData, setFormData] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState('');
+  const [requirements, setRequirements] = useState(null);
+  const [formValues, setFormValues] = useState({});
+  const [errors, setErrors] = useState({});
+  const [banner, setBanner] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  useEffect(() => {
-    async function loadCase() {
-      try {
-        setLoading(true);
+  const blueprint = useMemo(
+    () => getBlueprintForPath(requirements?.selectedFilingPath),
+    [requirements?.selectedFilingPath]
+  );
+  const missingFields = useMemo(
+    () => new Set((requirements?.missingFields || []).map((item) => item.field)),
+    [requirements?.missingFields]
+  );
 
-        const response = await getCaseById(caseId);
-
-        setCaseData(response);
-
-        setFormData({
-          property_address: response.property_address || '',
-          city: response.city || '',
-          state: response.state || '',
-          zip_code: response.zip_code || '',
-          lease_start_date: response.lease_start_date || '',
-          monthly_rent: response.monthly_rent || '',
-          landlord_name: response.landlord_name || '',
-          landlord_phone: response.landlord_phone || '',
-          landlord_address: response.landlord_address || '',
-          repair_description: response.dispute_description || '',
-          evidence_description: response.evidence_description || ''
-        });
-      } catch (err) {
-        setError('Failed to load case.');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadCase();
-  }, [caseId]);
-
-  const missingFields = useMemo(() => {
-    const missing = [];
-
-    if (!formData.landlord_address?.trim()) {
-      missing.push('Landlord address');
-    }
-
-    if (!formData.repair_description?.trim()) {
-      missing.push('Repair description');
-    }
-
-    return missing;
-  }, [formData]);
-
-  const canGeneratePdf = missingFields.length === 0;
-
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-
-      await saveCaseFormAnswers(caseId, formData);
-
-      alert('Answers saved successfully.');
-    } catch (err) {
-      alert('Failed to save answers.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleGeneratePdf = async () => {
-    if (!canGeneratePdf) return;
+  async function loadWorkflow() {
+    setIsLoading(true);
 
     try {
-      setGenerating(true);
+      const [caseResult, requirementsResult] = await Promise.all([
+        api.getCase(caseId),
+        api.getFormRequirements(caseId)
+      ]);
 
-      await generateOfficialPdf(caseId);
-
-      alert('Official PDF generated successfully.');
-    } catch (err) {
-      alert('Failed to generate PDF.');
+      setCaseData(caseResult);
+      setRequirements(requirementsResult);
+      setFormValues(
+        buildInitialValues(
+          caseResult,
+          requirementsResult.currentAnswers,
+          requirementsResult.selectedFilingPath
+        )
+      );
+      setErrors({});
+    } catch (error) {
+      setBanner({
+        type: 'danger',
+        message: error.message
+      });
     } finally {
-      setGenerating(false);
+      setIsLoading(false);
     }
-  };
-
-  if (loading) {
-    return (
-      <AppShell>
-        <LoadingSpinner />
-      </AppShell>
-    );
   }
 
-  if (error) {
-    return (
-      <AppShell>
-        <ErrorAlert message={error} />
-      </AppShell>
-    );
+  useEffect(() => {
+    loadWorkflow();
+  }, [caseId]);
+
+  function handleFieldChange(fieldName, value) {
+    setFormValues((current) => ({
+      ...current,
+      [fieldName]: value
+    }));
+  }
+
+  async function handleSave() {
+    setIsSaving(true);
+    setErrors({});
+    setBanner(null);
+
+    try {
+      await api.saveFormAnswers(caseId, formValues);
+      await loadWorkflow();
+      setBanner({
+        type: 'success',
+        message: 'Form answers saved successfully.'
+      });
+    } catch (error) {
+      setErrors(error.fields || {});
+      setBanner({
+        type: 'danger',
+        message: error.message
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleGenerate() {
+    setIsGenerating(true);
+    setErrors({});
+    setBanner(null);
+
+    try {
+      await api.generateForm(caseId);
+      await loadWorkflow();
+      setBanner({
+        type: 'success',
+        message: 'The official form was generated and is ready for download.'
+      });
+    } catch (error) {
+      setErrors(error.fields || {});
+      setBanner({
+        type: 'danger',
+        message: error.message
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   return (
-    <AppShell>
-      <div className="page-stack">
-        <section className="hero-card">
-          <div>
-            <p className="eyebrow">Renter portal</p>
-
-            <h1>Form review and download</h1>
-
-            <p className="hero-copy">
-              Review and complete your filing information before generating
-              the final PDF.
-            </p>
-          </div>
-
-          <div className="hero-actions">
-            <div className="user-pill">
-              <span className="role-badge">Renter</span>
-
-              <strong>{caseData.renter_name}</strong>
-
-              <span>{caseData.renter_email}</span>
-            </div>
-
+    <AppShell
+      actions={
+        caseData ? (
+          <div className="inline-actions">
             <Link
               className="button button-secondary"
-              to={`/cases/${caseId}`}
+              to={`/cases/${caseData.caseId}`}
             >
-              ← Back to case
+              Back to case
             </Link>
-          </div>
-        </section>
-
-        {missingFields.length > 0 && (
-          <section className="card warning-card">
-            <div className="info-row">
-              <div className="info-icon warning-icon">⚠</div>
-
-              <div>
-                <h3>Missing fields</h3>
-
-                <p>
-                  Please complete the following required fields:
-                </p>
-
-                <div className="tag-list">
-                  {missingFields.map((field) => (
-                    <span key={field} className="tag">
-                      {field}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        <section className="card info-card">
-          <div className="info-row">
-            <div className="info-icon">i</div>
-
-            <div>
-              <h3>Almost there</h3>
-
-              <p>
-                Complete the missing fields above to generate your official PDF.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <div className="workflow-grid">
-          <section className="card section-stack">
-            <h2>Section 1 of 3: Case details</h2>
-
-            <p className="section-copy">
-              Information about the rental property and dispute.
-            </p>
-
-            <div className="form-grid">
-              <label>
-                <span>Property address</span>
-
-                <input
-                  name="property_address"
-                  value={formData.property_address}
-                  onChange={handleChange}
-                />
-              </label>
-
-              <label>
-                <span>City</span>
-
-                <input
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                />
-              </label>
-
-              <label>
-                <span>State</span>
-
-                <input
-                  name="state"
-                  value={formData.state}
-                  onChange={handleChange}
-                />
-              </label>
-
-              <label>
-                <span>Zip code</span>
-
-                <input
-                  name="zip_code"
-                  value={formData.zip_code}
-                  onChange={handleChange}
-                />
-              </label>
-
-              <label>
-                <span>Lease start date</span>
-
-                <input
-                  type="date"
-                  name="lease_start_date"
-                  value={formData.lease_start_date}
-                  onChange={handleChange}
-                />
-              </label>
-
-              <label>
-                <span>Monthly rent</span>
-
-                <input
-                  name="monthly_rent"
-                  value={formData.monthly_rent}
-                  onChange={handleChange}
-                />
-              </label>
-
-              <label>
-                <span>Landlord full name</span>
-
-                <input
-                  name="landlord_name"
-                  value={formData.landlord_name}
-                  onChange={handleChange}
-                />
-              </label>
-
-              <label>
-                <span>Landlord phone</span>
-
-                <input
-                  name="landlord_phone"
-                  value={formData.landlord_phone}
-                  onChange={handleChange}
-                />
-              </label>
-
-              <label className="full-width">
-                <span>Landlord address</span>
-
-                <input
-                  name="landlord_address"
-                  value={formData.landlord_address}
-                  onChange={handleChange}
-                />
-              </label>
-
-              <label className="full-width">
-                <span>Repair description</span>
-
-                <textarea
-                  rows="5"
-                  name="repair_description"
-                  value={formData.repair_description}
-                  onChange={handleChange}
-                />
-              </label>
-
-              <label className="full-width">
-                <span>Evidence description</span>
-
-                <textarea
-                  rows="4"
-                  name="evidence_description"
-                  value={formData.evidence_description}
-                  onChange={handleChange}
-                />
-              </label>
-            </div>
-          </section>
-
-          <aside className="card progress-card">
-            <h3>Your progress</h3>
-
-            <div className="progress-bar">
-              <div className="progress-fill" />
-            </div>
-
-            <p>33% complete</p>
-
-            <ul className="progress-list">
-              <li className="active-step">
-                • Case details
-              </li>
-
-              <li>
-                ○ Dispute details
-              </li>
-
-              <li>
-                ○ Supporting details
-              </li>
-            </ul>
-          </aside>
-        </div>
-
-        <section className="card section-stack">
-          <div className="save-generate-row">
-            <div>
-              <h2>Save or generate</h2>
-
-              <p className="section-copy">
-                Save your answers anytime. When all required fields are complete,
-                you can generate your official PDF.
-              </p>
-            </div>
-
-            <div className="inline-actions">
-              <button
-                className="button button-secondary"
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-              >
-                {saving ? 'Saving...' : 'Save answers'}
-              </button>
-
+            {caseData.generatedForm?.generatedPdfUrl ? (
               <button
                 className="button"
+                onClick={() =>
+                  api.downloadGeneratedForm(
+                    caseData.generatedForm.generatedPdfUrl,
+                    caseData.generatedForm.generatedPdfFilename
+                  )
+                }
                 type="button"
-                onClick={handleGeneratePdf}
-                disabled={!canGeneratePdf || generating}
               >
-                {generating
-                  ? 'Generating...'
-                  : 'Generate official PDF'}
+                Download PDF
               </button>
-            </div>
+            ) : null}
           </div>
+        ) : null
+      }
+      subtitle="Check the selected filing path, answer the remaining guided questions, and generate the protected PDF only when the backend reports the case is ready."
+      title="Form review and download"
+    >
+      {banner ? <div className={`alert alert-${banner.type}`}>{banner.message}</div> : null}
 
-          {!canGeneratePdf && (
-            <div className="info-banner">
-              Complete all required fields to enable PDF generation.
-            </div>
-          )}
-
-          <div className="inline-actions">
-            <button
-              className="button button-secondary"
-              type="button"
-              onClick={() =>
-                printDisputeSummary({
-                  caseData,
-                  formData
-                })
-              }
-            >
-              Print dispute summary
-            </button>
-          </div>
+      {isLoading ? (
+        <section className="card">
+          <p className="empty-copy">Loading the form workflow...</p>
         </section>
-      </div>
+      ) : caseData && requirements ? (
+        <>
+          <section className="card section-stack">
+            <div className="summary-head">
+              <div>
+                <p className="eyebrow">Backend filing decision</p>
+                <h3>{titleFromFilingPath(requirements.selectedFilingPath)}</h3>
+                <p className="section-copy">{requirements.message}</p>
+              </div>
+              <StatusPill status={requirements.status} />
+            </div>
+
+            <div className="summary-grid">
+              <div className="summary-tile">
+                <strong>Selected form</strong>
+                <p className="muted">{requirements.selectedFormName || 'No supported official form'}</p>
+              </div>
+              <div className="summary-tile">
+                <strong>Filing destination</strong>
+                <p className="muted">{requirements.filingDestination || 'Not available'}</p>
+              </div>
+              <div className="summary-tile">
+                <strong>Official source</strong>
+                {requirements.officialSourceUrl ? (
+                  <a
+                    className="link-text"
+                    href={requirements.officialSourceUrl}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Open source form
+                  </a>
+                ) : (
+                  <p className="muted">No source link for unsupported cases.</p>
+                )}
+              </div>
+              <div className="summary-tile">
+                <strong>Last generated PDF</strong>
+                <p className="muted">
+                  {caseData.generatedForm?.createdAt
+                    ? formatDateTime(caseData.generatedForm.createdAt)
+                    : 'Not generated yet'}
+                </p>
+              </div>
+            </div>
+
+            {requirements.reasonSelected ? (
+              <div className="alert alert-info">{requirements.reasonSelected}</div>
+            ) : null}
+
+            {requirements.missingFields.length > 0 ? (
+              <div className="alert alert-warning">
+                Missing fields: {requirements.missingFields.map((item) => item.label).join(', ')}.
+              </div>
+            ) : requirements.canGenerate ? (
+              <div className="alert alert-success">
+                All required information is present. You can generate the official PDF now.
+              </div>
+            ) : null}
+          </section>
+
+          {requirements.selectedFilingPath === 'UNSUPPORTED_FORM_TYPE' ? (
+            <section className="card section-stack">
+              <p className="eyebrow">Unsupported-path fallback</p>
+              <h3>Keep the dispute organized even without a supported form</h3>
+              <p className="section-copy">
+                The backend cannot generate an official filing document for this
+                combination yet, but you can still keep the case saved and print
+                a clean dispute summary for your records.
+              </p>
+              <div className="inline-actions">
+                <button
+                  className="button"
+                  onClick={() =>
+                    printDisputeSummary({
+                      caseData,
+                      requirements
+                    })
+                  }
+                  type="button"
+                >
+                  Print dispute summary
+                </button>
+                <Link
+                  className="button button-secondary"
+                  to={`/cases/${caseId}`}
+                >
+                  Return to case details
+                </Link>
+              </div>
+            </section>
+          ) : (
+            <>
+              {blueprint.map((section) => (
+                <section
+                  key={section.title}
+                  className="card section-stack"
+                >
+                  <div>
+                    <p className="eyebrow">Guided questions</p>
+                    <h3>{section.title}</h3>
+                    <p className="section-copy">{section.description}</p>
+                  </div>
+
+                  <div className="summary-grid">
+                    {section.fields.map((fieldName) => (
+                      <FormField
+                        key={fieldName}
+                        error={errors[fieldName]}
+                        fieldName={fieldName}
+                        highlight={missingFields.has(fieldName)}
+                        onChange={handleFieldChange}
+                        value={formValues[fieldName]}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+
+              <section className="card section-stack">
+                <div className="split-row">
+                  <div>
+                    <h3>Save or generate</h3>
+                    <p className="section-copy">
+                      Save answers as you go. Generate only after every required
+                      field is satisfied.
+                    </p>
+                  </div>
+
+                  <div className="inline-actions">
+                    <button
+                      className="button button-secondary"
+                      disabled={isSaving}
+                      onClick={handleSave}
+                      type="button"
+                    >
+                      {isSaving ? 'Saving...' : 'Save answers'}
+                    </button>
+                    <button
+                      className="button"
+                      disabled={isGenerating || !requirements.canGenerate}
+                      onClick={handleGenerate}
+                      type="button"
+                    >
+                      {isGenerating ? 'Generating...' : 'Generate official PDF'}
+                    </button>
+                  </div>
+                </div>
+
+                {requirements.filingInstructions?.length ? (
+                  <div className="summary-panel">
+                    <strong>Filing instructions</strong>
+                    <ul className="bullet-list">
+                      {requirements.filingInstructions.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </section>
+            </>
+          )}
+        </>
+      ) : null}
     </AppShell>
   );
 }
+
+export default FormWorkflowPage;
