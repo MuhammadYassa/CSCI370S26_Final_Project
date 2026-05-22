@@ -55,6 +55,9 @@ export function printDisputeSummary({ caseData, requirements }) {
   printWindow.document.open();
   printWindow.document.write(html);
   printWindow.document.close();
-  printWindow.focus();
-  printWindow.print();
+
+  printWindow.onload = () => {
+    printWindow.focus();
+    printWindow.print();
+  };
 }
