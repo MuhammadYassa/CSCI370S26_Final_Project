@@ -5,7 +5,7 @@ import {
 } from './format';
 
 export function printDisputeSummary({ caseData, requirements }) {
-  const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=960,height=720');
+  const printWindow = window.open('', '_blank', 'width=960,height=720');
 
   if (!printWindow) {
     return;
