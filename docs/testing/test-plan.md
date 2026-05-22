@@ -94,7 +94,7 @@ The repository also includes backend ticket test-result artifacts in:
 - `backend/test_results/ticket_2_tests_done_and_results.pdf`
 - `backend/test_results/ticket_3_tests_done_and_results.pdf`
 
-## Core Test Cases
+## Backend Test Cases
 
 | ID | Test Case | Steps Summary | Expected Result | Related Requirements |
 |---|---|---|---|---|
@@ -119,15 +119,7 @@ The repository also includes backend ticket test-result artifacts in:
 
 ## Frontend-Focused Checks
 
-These checks are still useful even though the frontend is only partially integrated:
-
-| ID | Test Case | Expected Result |
-|---|---|---|
-| UI-01 | Open register page | User can create renter or landlord account |
-| UI-02 | Open login page | User can authenticate and reach dashboard |
-| UI-03 | Open dashboard | Existing cases render for the logged-in user |
-| UI-04 | Create new case from UI | Initial case submission succeeds through the API |
-| UI-05 | Open case details | Page loads, though some content may include mock placeholders |
+Will be Filled in by Ismail.
 
 ## Entry Criteria
 
@@ -151,7 +143,6 @@ Testing is considered complete when:
 
 - invalid or missing AI credentials can block arbitration verification
 - local environment differences may affect MySQL connectivity
-- frontend mock pages may make UI-only verification incomplete
 - missing official template PDFs will block PDF generation tests
 
 ## Recommended Regression Set

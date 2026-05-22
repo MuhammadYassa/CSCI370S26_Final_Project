@@ -19,7 +19,7 @@ Before starting, make sure the machine has:
 
 - Node.js and `npm`
 - MySQL
-- a valid backend `.env` file
+- a valid filled out backend `.env` file
 - the official PDF templates already included in `backend/templates/legal-forms/ny/`
 
 ## Standard Startup Procedure
