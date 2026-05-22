@@ -407,9 +407,12 @@ fieldset small {
 .case-grid,
 .info-grid,
 .detail-grid,
-.summary-grid,
-.form-layout {
+.summary-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-layout {
+  grid-template-columns: 1fr;
 }
 
 .grid-3,
