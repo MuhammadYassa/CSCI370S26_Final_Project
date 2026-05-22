@@ -583,3 +583,44 @@ fieldset small {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Section spacing fix ===== */
+
+.page-section,
+.dashboard-section,
+.case-section,
+.summary-section,
+.response-section,
+.arbitration-section {
+  margin-top: 2rem;
+}
+
+/* Card spacing */
+
+.card,
+.panel,
+.workspace-card {
+  margin-bottom: 2rem;
+}
+
+/* Grid spacing */
+
+.grid,
+.two-column-grid,
+.case-grid {
+  gap: 2rem;
+}
+
+/* Form section spacing */
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Prevent sections from sticking together */
+
+section {
+  margin-bottom: 2rem;
+}
