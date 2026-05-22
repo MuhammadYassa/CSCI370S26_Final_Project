@@ -1,4 +1,4 @@
-CREATE DATABASE IF NOT EXISTS renter_dispute_app;
+CREATE DATABASE IF NOT EXISTS renter_dispute_app; 
 USE renter_dispute_app;
 
 CREATE TABLE IF NOT EXISTS users (
@@ -37,3 +37,24 @@ CREATE TABLE IF NOT EXISTS disputes (
     FOREIGN KEY (tenant_id) REFERENCES users(id),
     FOREIGN KEY (property_id) REFERENCES properties(id)
 );
+
+-- SAMPLE DATA
+
+INSERT INTO users (full_name, email, password, role)
+VALUES
+('Test Tenant', 'tenant@test.com', 'password123', 'tenant'),
+('Test Landlord', 'landlord@test.com', 'password123', 'landlord');
+
+INSERT INTO properties (landlord_id, title, description, address, city, state, zip_code, rent, bedrooms, bathrooms)
+VALUES
+(2, 'Sample Apartment', 'A sample rental property', '123 Main St', 'New York', 'NY', '10001', 1500.00, 2, 1);
+
+INSERT INTO disputes (tenant_id, property_id, subject, description, status)
+VALUES
+(1, 1, 'Broken heater', 'The heater has not been working for 3 days.', 'open');
+
+-- SHOW DATA
+
+SELECT * FROM users;
+SELECT * FROM properties;
+SELECT * FROM disputes;
